@@ -74,6 +74,13 @@ nbproject
 #
 # Get latest from https://github.com/github/gitignore/blob/master/Unity.gitignore
 #
+
+BluetoothAPI/
+BluetoothUnityAPI.bundle/
+BluetoothUnityAPI/
+ArduinoBluetoothAPI.dll
+classes.jar
+
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
