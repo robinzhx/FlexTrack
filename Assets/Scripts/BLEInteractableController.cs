@@ -26,6 +26,12 @@ namespace Bluetooth
         //public Button m_hideLog_btn; // hide the current panel button, generally close these panels after successful connection, enter the control
         public Text m_log_txt; // input log information
 
+        float gX, gY, gZ;
+
+        string received_message;
+
+        string[] subscribeAddresses = { "2104", "2105", "2106" };
+
         // Message processing callback
         Action<string> _m_msgHandler;
         public void AddMsgHandler(Action<string> handler)
@@ -44,41 +50,36 @@ namespace Bluetooth
                 _m_helper = BluetoothHelper.GetInstance();
                 // Turn on Bluetooth
                 _m_helper.EnableBluetooth(true);
+
                 // Set the length of the send and receive characters, here is the key point, 
                 // if you dont set it, you can receive it, you cant send a message, and you 
                 // can only send it to a certain amount of data cache
-                _m_helper.setFixedLengthBasedStream(1);
 
-                // callback function for successful connection
-                _m_helper.OnConnected += () =>
-                {
-                    Log("Connect successfully");
-                    // Successful connection, start listening for messages
-                    _m_helper.StartListening();
-                };
+                //_m_helper.setFixedLengthBasedStream(1);
+                //_m_helper.setTerminatorBasedStream("\n");
 
-                // callback function for connection failure
-                _m_helper.OnConnectionFailed += () =>
-                {
-                    Log("Connection failed");
-                    Disconnect();
-                };
+                _m_helper.OnConnected += OnConnected;
+                _m_helper.OnConnectionFailed += OnConnectionFailed;
+                //_m_helper.OnDataReceived += OnMessageReceived; //read the data
+                _m_helper.OnScanEnded += OnScanEnded;
+                _m_helper.OnCharacteristicChanged += OnCharacteristicChanged;
+
+                BluetoothHelperService service = new BluetoothHelperService("1101");
+                service.addCharacteristic(new BluetoothHelperCharacteristic(subscribeAddresses[0]));
+                service.addCharacteristic(new BluetoothHelperCharacteristic(subscribeAddresses[1]));
+                service.addCharacteristic(new BluetoothHelperCharacteristic(subscribeAddresses[2]));
+                _m_helper.Subscribe(service);
+
 
                 // No callback function found for the device
-                _m_helper.OnServiceNotFound += serviceName =>
-                {
-                    Log("No device found:" + serviceName);
-                    // Disconnect
-                    Disconnect();
-                };
+                //_m_helper.OnServiceNotFound += serviceName =>
+                //{
+                //    Log("No device found:" + serviceName);
+                //    // Disconnect
+                //    Disconnect();
+                //};
 
-                // callback function for received message
-                _m_helper.OnDataReceived += () =>
-                {
-                    Log("A new message was received");
-                    // process the received callback
-                    _m_msgHandler(_m_helper.Read());
-                };
+                Scan();
 
             }
             catch (Exception e)
@@ -88,13 +89,84 @@ namespace Bluetooth
             }
         }
 
+        void OnCharacteristicChanged(byte[] val, BluetoothHelperCharacteristic id)
+        {
+            if (id.getName().Equals("0000" + subscribeAddresses[0] + "-0000-1000-8000-00805f9b34fb"))
+            {
+                gX = System.BitConverter.ToSingle(val, 0);
+            }
+            else if (id.getName().Equals("0000" + subscribeAddresses[1] + "-0000-1000-8000-00805f9b34fb"))
+            {
+                gY = System.BitConverter.ToSingle(val, 0);
+            }
+            else if (id.getName().Equals("0000" + subscribeAddresses[2] + "-0000-1000-8000-00805f9b34fb"))
+            {
+                gZ = System.BitConverter.ToSingle(val, 0);
+            }
+            else
+            {
+                Log(id.getName()  + " not equal to" + subscribeAddresses[0]);
+            }
+
+            Log(gX + " " + gY + " " + gZ);
+
+        }
+
+        // callback function for successful connection
+        void OnConnected()
+        {
+            Log("Connect successfully");
+            // Successful connection, start listening for messages
+            _m_helper.StartListening();
+        }
+
+        // callback function for connection failure
+        void OnConnectionFailed()
+        {
+            Log("Connection failed");
+            Disconnect();
+        }
+
+        // callback function for received message
+        void OnMessageReceived()
+        {
+            Log("A new message was received");
+            // process the received callback
+            _m_msgHandler(_m_helper.Read());
+        }
+
+        void OnScanEnded(LinkedList<BluetoothDevice> nearbyDevices)
+        {
+            Log("1 Scan ended");
+
+            if (nearbyDevices.Count == 0)
+            {
+                _m_helper.ScanNearbyDevices();
+                return;
+            }
+
+
+            foreach (BluetoothDevice device in nearbyDevices)
+            {
+                Log(device.DeviceName);
+                if (device.DeviceName == "FlexTrackIoT")
+                    Log("FOUND!!");
+            }
+
+            _m_helper.setDeviceName("FlexTrackIoT");
+            _m_helper.Connect();
+            //if (_m_helper.isDevicePaired())
+            //    Log("Connected: " + _m_helper.getDeviceName());
+
+        }
+
         /// <summary>
         /// output log
         /// </ summary>
         /// <param name = "log"> Log content </ param>
         public void Log(string log)
         {
-            m_log_txt.text += "\n" + log;
+            m_log_txt.text = log + "\n" + m_log_txt.text;
         }
 
 
@@ -140,7 +212,8 @@ namespace Bluetooth
         // Add event to connect button
         public void Scan()
         {
-            
+            _m_helper.ScanNearbyDevices();
+            Log("start scan");
         }
 
         // hide panel operation event monitoring
