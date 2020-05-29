@@ -28,9 +28,12 @@ namespace Bluetooth
 
         float gX, gY, gZ;
 
+        public GameObject visObject;
+
         string received_message;
 
-        string[] subscribeAddresses = { "2104", "2105", "2106" };
+        //string[] subscribeAddresses = { "2104", "2105", "2106" };
+        string[] subscribeAddresses = { "2107", "2108", "2109" };
 
         // Message processing callback
         Action<string> _m_msgHandler;
@@ -91,15 +94,15 @@ namespace Bluetooth
 
         void OnCharacteristicChanged(byte[] val, BluetoothHelperCharacteristic id)
         {
-            if (id.getName().Equals("0000" + subscribeAddresses[0] + "-0000-1000-8000-00805f9b34fb"))
+            if (id.getName().Equals("0000" + subscribeAddresses[0] + "-0000-1000-8000-00805f9b34fb")) // BASE_UUID conversion
             {
                 gX = System.BitConverter.ToSingle(val, 0);
             }
-            else if (id.getName().Equals("0000" + subscribeAddresses[1] + "-0000-1000-8000-00805f9b34fb"))
+            else if (id.getName().Equals("0000" + subscribeAddresses[1] + "-0000-1000-8000-00805f9b34fb")) // BASE_UUID conversion
             {
                 gY = System.BitConverter.ToSingle(val, 0);
             }
-            else if (id.getName().Equals("0000" + subscribeAddresses[2] + "-0000-1000-8000-00805f9b34fb"))
+            else if (id.getName().Equals("0000" + subscribeAddresses[2] + "-0000-1000-8000-00805f9b34fb")) // BASE_UUID conversion
             {
                 gZ = System.BitConverter.ToSingle(val, 0);
             }
@@ -108,7 +111,12 @@ namespace Bluetooth
                 Log(id.getName()  + " not equal to" + subscribeAddresses[0]);
             }
 
-            Log(gX + " " + gY + " " + gZ);
+            //Log(gX + " " + gY + " " + gZ);
+
+            if (visObject)
+            {
+                visObject.transform.eulerAngles = new Vector3(gX, gY, gZ);
+            }
 
         }
 
