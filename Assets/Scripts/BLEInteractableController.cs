@@ -113,8 +113,25 @@ namespace Bluetooth
 
             //Log(gX + " " + gY + " " + gZ);
 
+            //float c1 = Mathf.Cos(Mathf.Deg2Rad * gX);
+            //float s1 = Mathf.Sin(Mathf.Deg2Rad * gX);
+            //float c2 = Mathf.Cos(Mathf.Deg2Rad * gY);
+            //float s2 = Mathf.Sin(Mathf.Deg2Rad * gY);
+            //float c3 = Mathf.Cos(Mathf.Deg2Rad * gZ);
+            //float s3 = Mathf.Sin(Mathf.Deg2Rad * gZ);
+
+            //Matrix4x4 convertion = new Matrix4x4(
+            //    new Vector4 (c2 * c3, s1 * s3 + c1 * c3 * s2, c3 * s1 * s2 - c1 * s3, 0),
+            //    new Vector4(-s2, c1 * c2, c2 * s1, 0),
+            //    new Vector4(c2 * s3, c1 * s2 * s3 - c3 * s1, c1 * c3 + s1 * s2 * s3, 0),
+            //    new Vector4(0, 0, 0, 1)
+            //).transpose;
+
+
+
             if (visObject)
             {
+                //visObject.transform.rotation *= Quaternion.LookRotation(convertion.GetColumn(2), convertion.GetColumn(1));
                 visObject.transform.eulerAngles = new Vector3(gX, gY, gZ);
             }
 

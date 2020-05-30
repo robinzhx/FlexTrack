@@ -3,17 +3,28 @@
         {
             "name": "Win32",
             "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceRoot}",
                 "C:\\Users\\XCOM Penrose\\AppData\\Local\\Arduino15\\packages\\arduino\\tools\\**",
                 "C:\\Users\\XCOM Penrose\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\samd\\1.8.6\\**",
                 "C:\\Users\\XCOM Penrose\\Documents\\Arduino\\libraries\\**",
-                "C:\\Users\\XCOM Penrose\\Documents\\Arduino\\libraries\\**",
-                "C:\\Users\\XCOM Penrose\\Documents\\Arduino\\libraries\\Arduino_LSM6DS3\\src\\**"
+                "C:\\Users\\XCOM Penrose\\Documents\\Arduino\\libraries\\Arduino_LSM6DS3\\src\\**",
+                "C:\\Users\\XCOM Penrose\\Documents\\arduino-1.8.12\\hardware\\arduino\\avr\\cores\\arduino",
+                "C:\\Users\\XCOM Penrose\\Documents\\arduino-1.8.12\\hardware\\arduino\\avr\\libraries\\EEPROM\\src",
+                "C:\\Users\\XCOM Penrose\\Documents\\arduino-1.8.12\\hardware\\arduino\\avr\\libraries\\HID\\src",
+                "C:\\Users\\XCOM Penrose\\Documents\\arduino-1.8.12\\hardware\\arduino\\avr\\libraries\\SoftwareSerial/src",
+                "C:\\Users\\XCOM Penrose\\Documents\\arduino-1.8.12\\hardware\\arduino\\avr\\libraries\\SPI\\src",
+                "C:\\Users\\XCOM Penrose\\Documents\\arduino-1.8.12\\hardware\\arduino\\avr\\libraries\\Wire\\src",
+                "C:\\Users\\XCOM Penrose\\Documents\\arduino-1.8.12\\hardware\\arduino\\avr\\libraries\\SPI\\src"
             ],
             "forcedInclude": [
                 "C:\\Users\\XCOM Penrose\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\samd\\1.8.6\\cores\\arduino\\Arduino.h"
             ],
+            "defines": [
+                "USBCON" 
+            ],
             "intelliSenseMode": "msvc-x64",
-            "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.25.28610/bin/Hostx64/x64/cl.exe",
+            "compilerPath": "C:\\Users\\XCOM Penrose\\Documents\\arduino-1.8.12\\hardware\\tools\\avr\\bin\\cl.exe",
             "cStandard": "c11",
             "cppStandard": "c++17"
         }

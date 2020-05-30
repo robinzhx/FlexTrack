@@ -16,9 +16,9 @@
 #include <Wire.h>
 #include "Adafruit_MPR121.h"
 
-#ifndef _BV
-#define _BV(bit) (1 << (bit)) 
-#endif
+//#ifndef _BV
+//#define _BV(bit) (1 << (bit)) 
+//#endif
 
 // You can have up to 4 on one i2c bus but one is enough for testing!
 Adafruit_MPR121 cap = Adafruit_MPR121();
@@ -44,11 +44,18 @@ BLEFloatCharacteristic imuGXChar("2104", BLERead | BLENotify);
 BLEFloatCharacteristic imuGYChar("2105", BLERead | BLENotify);
 BLEFloatCharacteristic imuGZChar("2106", BLERead | BLENotify);
 
-BLEFloatCharacteristic imuRollChar("2107", BLERead | BLENotify);
-BLEFloatCharacteristic imuPitchChar("2108", BLERead | BLENotify);
-BLEFloatCharacteristic imuHeadChar("2109", BLERead | BLENotify);
+// BLEFloatCharacteristic imuRollChar("2107", BLERead | BLENotify);
+// BLEFloatCharacteristic imuPitchChar("2108", BLERead | BLENotify);
+// BLEFloatCharacteristic imuHeadChar("2109", BLERead | BLENotify);
 
-BLEUnsignedIntCharacteristic touchChar("2110", BLERead | BLENotify);
+BLEFloatCharacteristic imuQ0Char("2107", BLERead | BLENotify);
+BLEFloatCharacteristic imuQ1Char("2108", BLERead | BLENotify);
+BLEFloatCharacteristic imuQ2Char("2109", BLERead | BLENotify);
+BLEFloatCharacteristic imuQ3Char("2110", BLERead | BLENotify);
+
+BLEUnsignedIntCharacteristic touchChar("2111", BLERead | BLENotify);
+
+BLEDevice central;
 
 const char localName[] = "FlexTrackIoT";
 
@@ -57,10 +64,11 @@ Madgwick filter;
 // Temporary val
 float x, y, z;
 // acceleration data
-float aX, aY, aZ;
+float ax, ay, az;
 // gyroscope data
-float gX, gY, gZ;
-float roll, pitch, heading;
+float gx, gy, gz;
+//float roll, pitch, heading;
+float q0, q1, q2, q3;
 //timer
 unsigned long microsPerReading, microsPrevious;
 
@@ -119,24 +127,34 @@ void setup()
     imuService.addCharacteristic(imuGYChar);
     imuService.addCharacteristic(imuGZChar);
 
-    imuService.addCharacteristic(imuRollChar);
-    imuService.addCharacteristic(imuPitchChar);
-    imuService.addCharacteristic(imuHeadChar);
+    // imuService.addCharacteristic(imuRollChar);
+    // imuService.addCharacteristic(imuPitchChar);
+    // imuService.addCharacteristic(imuHeadChar);
+
+    imuService.addCharacteristic(imuQ0Char);
+    imuService.addCharacteristic(imuQ1Char);
+    imuService.addCharacteristic(imuQ2Char);
+    imuService.addCharacteristic(imuQ3Char);
 
     imuService.addCharacteristic(touchChar);
 
     BLE.addService(imuService);
 
-    imuAXChar.writeValue(aX);
-    imuAYChar.writeValue(aY);
-    imuAZChar.writeValue(aZ);
-    imuGXChar.writeValue(gX);
-    imuGYChar.writeValue(gY);
-    imuGZChar.writeValue(gZ);
+    imuAXChar.writeValue(ax);
+    imuAYChar.writeValue(ay);
+    imuAZChar.writeValue(az);
+    imuGXChar.writeValue(gx);
+    imuGYChar.writeValue(gy);
+    imuGZChar.writeValue(gz);
 
-    imuRollChar.writeValue(roll);
-    imuPitchChar.writeValue(pitch);
-    imuHeadChar.writeValue(heading);
+    // imuRollChar.writeValue(roll);
+    // imuPitchChar.writeValue(pitch);
+    // imuHeadChar.writeValue(heading);
+
+    imuQ0Char.writeValue(q0);
+    imuQ1Char.writeValue(q1);
+    imuQ2Char.writeValue(q2);
+    imuQ3Char.writeValue(q3);
 
     touchChar.writeValue(currtouched);
 
@@ -147,94 +165,132 @@ void setup()
 
 void loop()
 {
-    BLEDevice central = BLE.central();
     unsigned long microsNow;
 
-    // check if it's time to read data and update the filter
+    // check if it's time to read data and update the filter 
     microsNow = micros();
+    if (microsNow - microsPrevious >= microsPerReading) 
+    {
+        IMU.readAcceleration(ax, ay, az);
+        IMU.readGyroscope(gx, gy, gz);
+
+        // Serial.print(ax);
+        // Serial.print('\t');
+        // Serial.print(ay);
+        // Serial.print('\t');
+        // Serial.print(az);
+        // Serial.print('\t');
+        // Serial.print('\t');
+        // Serial.print(gx);
+        // Serial.print('\t');
+        // Serial.print(gy);
+        // Serial.print('\t');
+        // Serial.println(gz);
+
+        // update the filter, which computes orientation
+        filter.updateIMU(gx, gy, gz, ax, ay, az);
+
+        // print the heading, pitch and roll
+        // roll = filter.getRoll();
+        // pitch = filter.getPitch();
+        // heading = filter.getYaw();
+
+        //float * q = filter.getQuaternion();
+
+        q0 = filter.getQ0();
+        q1 = filter.getQ1();
+        q2 = filter.getQ2();
+        q3 = filter.getQ3();
+
+        float roll, pitch, heading;
+
+        roll = filter.getRoll();
+        pitch = filter.getPitch();
+        heading = filter.getYaw();
+        Serial.print("Orientation: ");
+        Serial.print(heading);
+        Serial.print(" ");
+        Serial.print(pitch);
+        Serial.print(" ");
+        Serial.println(roll);
+
+        // Serial.print("Orientation: ");
+        // Serial.print(q0);
+        // Serial.print(" ");
+        // Serial.print(q1);
+        // Serial.print(" ");
+        // Serial.println(q2);
+        // Serial.print(" ");
+        // Serial.println(q3);
+
+        // Get the currently touched pads
+        currtouched = cap.touched();
+
+        touchChar.writeValue(currtouched);
+                
+        // for (uint8_t i=0; i<12; i++) {
+        //     // it if *is* touched and *wasnt* touched before, alert!
+        //     if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
+        //     Serial.print(i); Serial.println(" touched");
+        //     }
+        //     // if it *was* touched and now *isnt*, alert!
+        //     if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
+        //     Serial.print(i); Serial.println(" released");
+        //     }
+        // }
+
+        // reset our state
+        lasttouched = currtouched;
+
+        // increment previous time, so we keep proper pace
+        microsPrevious = microsPrevious + microsPerReading;
+    }
+    
     if (central)
     {
-        Serial.print("Connected to central: ");
-        Serial.println(central.address());
-        digitalWrite(LED_BUILTIN, HIGH);
-        Serial.println("end if");
-        while (central.connected())
-        {
-            
-            // check if it's time to read data and update the filter
-            microsNow = micros();
-            if (microsNow - microsPrevious >= microsPerReading) {
-                //delay(200);
-
-                read_Accel();
-                read_Gyro();
-
-                imuAXChar.writeValue(aX);
-                imuAYChar.writeValue(aY);
-                imuAZChar.writeValue(aZ);
-                imuGXChar.writeValue(gX);
-                imuGYChar.writeValue(gY);
-                imuGZChar.writeValue(gZ);
-
-                // Serial.print(aX);
-                // Serial.print('\t');
-                // Serial.print(aY);
-                // Serial.print('\t');
-                // Serial.print(aZ);
-                // Serial.print('\t');
-                // Serial.print('\t');
-                // Serial.print(gX);
-                // Serial.print('\t');
-                // Serial.print(gY);
-                // Serial.print('\t');
-                // Serial.println(gZ);
-
-                // update the filter, which computes orientation
-                filter.updateIMU(gX, gY, gZ, aX, aY, aZ);
-
-                // print the heading, pitch and roll
-                roll = filter.getRoll();
-                pitch = filter.getPitch();
-                heading = filter.getYaw();
-                Serial.print("Orientation: ");
-                Serial.print(roll);
-                Serial.print(" ");
-                Serial.print(pitch);
-                Serial.print(" ");
-                Serial.println(heading);
-
-                imuRollChar.writeValue(roll);
-                imuPitchChar.writeValue(pitch);
-                imuHeadChar.writeValue(heading);
-
-                // Get the currently touched pads
-                currtouched = cap.touched();
-
-                touchChar.writeValue(currtouched);
-                
-                for (uint8_t i=0; i<12; i++) {
-                    // it if *is* touched and *wasnt* touched before, alert!
-                    if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
-                    Serial.print(i); Serial.println(" touched");
-                    }
-                    // if it *was* touched and now *isnt*, alert!
-                    if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
-                    Serial.print(i); Serial.println(" released");
-                    }
-                }
-
-                // reset our state
-                lasttouched = currtouched;
-
-                // increment previous time, so we keep proper pace
-                microsPrevious = microsPrevious + microsPerReading;
-            }
+        if (central.connected()) {
+            writeBLEdata();
         }
-        digitalWrite(LED_BUILTIN, LOW);
-        Serial.print("Disconnected from central: ");
-        Serial.println(central.address());
+        else 
+        {
+            digitalWrite(LED_BUILTIN, LOW);
+            Serial.print("Disconnected from central: ");
+            Serial.println(central.address());
+            central = BLE.central();
+        }
+
     }
-    delay(1000);
+    else 
+    {
+        central = BLE.central();
+        if (central && central.connected()) 
+        {
+            Serial.print("Connected to central: ");
+            Serial.println(central.address());
+            digitalWrite(LED_BUILTIN, HIGH);
+            writeBLEdata();
+        }
+    }
+        
+}
+
+void writeBLEdata() 
+{
+    imuAXChar.writeValue(ax);
+    imuAYChar.writeValue(ay);
+    imuAZChar.writeValue(az);
+    imuGXChar.writeValue(gx);
+    imuGYChar.writeValue(gy);
+    imuGZChar.writeValue(gz);
+
+    // imuRollChar.writeValue(roll);
+    // imuPitchChar.writeValue(pitch);
+    // imuHeadChar.writeValue(heading);
+
+    imuQ0Char.writeValue(q0);
+    imuQ1Char.writeValue(q1);
+    imuQ2Char.writeValue(q2);
+    imuQ3Char.writeValue(q3);
 }
 
 void read_Accel()
@@ -243,12 +299,12 @@ void read_Accel()
     if (IMU.accelerationAvailable())
     {
         IMU.readAcceleration(x, y, z);
-        //    aX = (1+x)*100;
-        //    aY = (1+y)*100;
-        //    aZ = (1+z)*100;
-        aX = x;
-        aY = y;
-        aZ = z;
+        //    ax = (1+x)*100;
+        //    ay = (1+y)*100;
+        //    az = (1+z)*100;
+        ax = x;
+        ay = y;
+        az = z;
     }
 }
 
@@ -258,11 +314,11 @@ void read_Gyro()
     if (IMU.gyroscopeAvailable())
     {
         IMU.readGyroscope(x, y, z);
-        //    aX = (1+x)*100;
-        //    aY = (1+y)*100;
-        //    aZ = (1+z)*100;
-        gX = x;
-        gY = y;
-        gZ = z;
+        //    ax = (1+x)*100;
+        //    ay = (1+y)*100;
+        //    az = (1+z)*100;
+        gx = x;
+        gy = y;
+        gz = z;
     }
 }
